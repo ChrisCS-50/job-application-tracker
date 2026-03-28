@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="fa-regular fa-address-book" style="color: var(--primary); margin-right: 10px;"></i> Contacts</h1>
+    <a href="{{ url_for('add_contact') }}" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Add Contact</a>
+</div>
+
+<div class="glass-card">
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Job Title</th>
+                    <th>Company</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for contact in contacts %}
+                <tr>
+                    <td style="font-weight: 500;">
+                        {{ contact.contact_name }}
+                        {% if contact.linkedin_url %}
+                        <a href="{{ contact.linkedin_url }}" target="_blank" style="margin-left: 0.5rem; font-size: 0.8rem; color: #0077b5;"><i class="fa-brands fa-linkedin"></i></a>
+                        {% endif %}
+                    </td>
+                    <td>{{ contact.title or '-' }}</td>
+                    <td><i class="fa-regular fa-building" style="color: var(--text-muted); margin-right: 5px;"></i> {{ contact.company_name or 'Independent' }}</td>
+                    <td>
+                        {% if contact.email %}
+                        <a href="mailto:{{ contact.email }}" class="badge badge-info"><i class="fa-regular fa-envelope"></i> {{ contact.email }}</a>
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
+                    <td>{{ contact.phone or '-' }}</td>
+                    <td class="actions-cell">
+                        <a href="{{ url_for('edit_contact', id=contact.contact_id) }}" class="btn btn-outlined" style="padding: 0.4rem 0.8rem;"><i class="fa-solid fa-pen"></i></a>
+                        <form action="{{ url_for('delete_contact', id=contact.contact_id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Delete this contact?');">
+                            <button type="submit" class="btn btn-danger" style="padding: 0.4rem 0.8rem;"><i class="fa-solid fa-trash"></i></button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2rem;">No contacts saved yet. Networking is key!</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

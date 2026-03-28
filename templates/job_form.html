@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="page-header">
+    <h1>
+        <i class="fa-solid {% if job %}fa-pen{% else %}fa-plus{% endif %}" style="color: var(--primary); margin-right: 10px;"></i> 
+        {% if job %}Edit Job{% else %}Add Job{% endif %}
+    </h1>
+    <a href="{{ url_for('list_jobs') }}" class="btn btn-outlined"><i class="fa-solid fa-arrow-left"></i> Back to List</a>
+</div>
+
+<div class="glass-card" style="max-width: 800px; margin: 0 auto;">
+    <form action="" method="POST">
+        
+        <div class="form-group">
+            <label for="company_id">Company *</label>
+            <select id="company_id" name="company_id" class="form-control" required style="cursor: pointer;">
+                <option value="">-- Select Company --</option>
+                {% for c in companies %}
+                <option value="{{ c.company_id }}" {% if job and job.company_id == c.company_id %}selected{% endif %}>
+                    {{ c.company_name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="job_title">Job Title *</label>
+            <input type="text" id="job_title" name="job_title" class="form-control" value="{{ job.job_title if job else '' }}" required>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div class="form-group">
+                <label for="job_type">Job Type</label>
+                <select id="job_type" name="job_type" class="form-control">
+                    <option value="Full-time" {% if job and job.job_type == 'Full-time' %}selected{% endif %}>Full-time</option>
+                    <option value="Part-time" {% if job and job.job_type == 'Part-time' %}selected{% endif %}>Part-time</option>
+                    <option value="Contract" {% if job and job.job_type == 'Contract' %}selected{% endif %}>Contract</option>
+                    <option value="Internship" {% if job and job.job_type == 'Internship' %}selected{% endif %}>Internship</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="date_posted">Date Posted</label>
+                <input type="date" id="date_posted" name="date_posted" class="form-control" value="{{ job.date_posted if job else '' }}">
+            </div>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div class="form-group">
+                <label for="salary_min">Minimum Salary ($)</label>
+                <input type="number" id="salary_min" name="salary_min" class="form-control" value="{{ job.salary_min if job and job.salary_min else '' }}">
+            </div>
+            <div class="form-group">
+                <label for="salary_max">Maximum Salary ($)</label>
+                <input type="number" id="salary_max" name="salary_max" class="form-control" value="{{ job.salary_max if job and job.salary_max else '' }}">
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label for="job_url">Job URL</label>
+            <input type="url" id="job_url" name="job_url" class="form-control" value="{{ job.job_url if job else '' }}" placeholder="https://...">
+        </div>
+        
+        <div class="form-group">
+            <label for="requirements">Requirements (Skills)</label>
+            <textarea id="requirements" name="requirements" class="form-control" placeholder="Comma separated list (e.g. Python, SQL, REST APIs)">{{ job.requirements_str if job else '' }}</textarea>
+            <small style="color: var(--warning); display: block; margin-top: 0.5rem;"><i class="fa-solid fa-wand-magic-sparkles"></i> Essential for our GenAI Job Match feature!</small>
+        </div>
+        
+        <div style="margin-top: 2rem;">
+            <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 0.8rem;">
+                <i class="fa-solid fa-save"></i> Save Job
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="page-header">
+    <h1>
+        <i class="fa-solid {% if contact %}fa-pen{% else %}fa-plus{% endif %}" style="color: var(--primary); margin-right: 10px;"></i> 
+        {% if contact %}Edit Contact{% else %}Add Contact{% endif %}
+    </h1>
+    <a href="{{ url_for('list_contacts') }}" class="btn btn-outlined"><i class="fa-solid fa-arrow-left"></i> Back to List</a>
+</div>
+
+<div class="glass-card" style="max-width: 800px; margin: 0 auto;">
+    <form action="" method="POST">
+        
+        <div class="form-group">
+            <label for="contact_name">Name *</label>
+            <input type="text" id="contact_name" name="contact_name" class="form-control" value="{{ contact.contact_name if contact else '' }}" required>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div class="form-group">
+                <label for="title">Job Title</label>
+                <input type="text" id="title" name="title" class="form-control" value="{{ contact.title if contact else '' }}">
+            </div>
+            <div class="form-group">
+                <label for="company_id">Associated Company</label>
+                <select id="company_id" name="company_id" class="form-control" style="cursor: pointer;">
+                    <option value="">-- Independent or Unknown --</option>
+                    {% for c in companies %}
+                    <option value="{{ c.company_id }}" {% if contact and contact.company_id == c.company_id %}selected{% endif %}>
+                        {{ c.company_name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" name="email" class="form-control" value="{{ contact.email if contact else '' }}">
+            </div>
+            <div class="form-group">
+                <label for="phone">Phone Number</label>
+                <input type="tel" id="phone" name="phone" class="form-control" value="{{ contact.phone if contact else '' }}">
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label for="linkedin_url">LinkedIn URL</label>
+            <input type="url" id="linkedin_url" name="linkedin_url" class="form-control" value="{{ contact.linkedin_url if contact else '' }}" placeholder="https://linkedin.com/in/...">
+        </div>
+        
+        <div class="form-group">
+            <label for="notes">Notes / Outreach Target</label>
+            <textarea id="notes" name="notes" class="form-control" placeholder="Context of how you know them, when to follow up...">{{ contact.notes if contact else '' }}</textarea>
+        </div>
+        
+        <div style="margin-top: 2rem;">
+            <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 0.8rem;">
+                <i class="fa-solid fa-save"></i> Save Contact
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

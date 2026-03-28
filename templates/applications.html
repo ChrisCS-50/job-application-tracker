@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="fa-solid fa-paper-plane" style="color: var(--primary); margin-right: 10px;"></i> Applications</h1>
+    <a href="{{ url_for('add_application') }}" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Record Application</a>
+</div>
+
+<div class="glass-card">
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Company</th>
+                    <th>Position</th>
+                    <th>Status</th>
+                    <th>Cover Letter</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for app in applications %}
+                <tr>
+                    <td style="white-space: nowrap;">{{ app.application_date }}</td>
+                    <td><i class="fa-regular fa-building" style="color: var(--text-muted); margin-right: 5px;"></i> {{ app.company_name or 'N/A' }}</td>
+                    <td style="font-weight: 500;">{{ app.job_title or 'N/A' }}</td>
+                    <td>
+                        <span class="badge 
+                            {% if app.status == 'Applied' %}badge-primary
+                            {% elif app.status in ['Screening', 'Interview'] %}badge-warning
+                            {% elif app.status == 'Offer' %}badge-success
+                            {% else %}badge-danger{% endif %}">
+                            {{ app.status }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if app.cover_letter_sent %}
+                        <span style="color: var(--accent);"><i class="fa-solid fa-check-circle"></i> Yes</span>
+                        {% else %}
+                        <span style="color: var(--text-muted);"><i class="fa-regular fa-circle-xmark"></i> No</span>
+                        {% endif %}
+                    </td>
+                    <td class="actions-cell">
+                        <a href="{{ url_for('edit_application', id=app.application_id) }}" class="btn btn-outlined" style="padding: 0.4rem 0.8rem;"><i class="fa-solid fa-pen"></i></a>
+                        <form action="{{ url_for('delete_application', id=app.application_id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Delete this application record?');">
+                            <button type="submit" class="btn btn-danger" style="padding: 0.4rem 0.8rem;"><i class="fa-solid fa-trash"></i></button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2rem;">No applications tracked yet. Start applying!</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="page-header">
+    <h1>
+        <i class="fa-solid {% if app %}fa-pen{% else %}fa-plus{% endif %}" style="color: var(--primary); margin-right: 10px;"></i> 
+        {% if app %}Edit Application{% else %}Record Application{% endif %}
+    </h1>
+    <a href="{{ url_for('list_applications') }}" class="btn btn-outlined"><i class="fa-solid fa-arrow-left"></i> Back to List</a>
+</div>
+
+<div class="glass-card" style="max-width: 800px; margin: 0 auto;">
+    <form action="" method="POST">
+        
+        <div class="form-group">
+            <label for="job_id">Job / Position *</label>
+            <select id="job_id" name="job_id" class="form-control" required style="cursor: pointer;">
+                <option value="">-- Select Job --</option>
+                {% for j in jobs %}
+                <option value="{{ j.job_id }}" {% if app and app.job_id == j.job_id %}selected{% endif %}>
+                    {{ j.job_title }} at {{ j.company_name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div class="form-group">
+                <label for="application_date">Date Applied *</label>
+                <input type="date" id="application_date" name="application_date" class="form-control" value="{{ app.application_date if app else current_date }}" required>
+            </div>
+            <div class="form-group">
+                <label for="status">Status</label>
+                <select id="status" name="status" class="form-control">
+                    <option value="Applied" {% if app and app.status == 'Applied' %}selected{% endif %}>Applied</option>
+                    <option value="Screening" {% if app and app.status == 'Screening' %}selected{% endif %}>Screening</option>
+                    <option value="Interview" {% if app and app.status == 'Interview' %}selected{% endif %}>Interview</option>
+                    <option value="Offer" {% if app and app.status == 'Offer' %}selected{% endif %}>Offer</option>
+                    <option value="Rejected" {% if app and app.status == 'Rejected' %}selected{% endif %}>Rejected</option>
+                    <option value="Withdrawn" {% if app and app.status == 'Withdrawn' %}selected{% endif %}>Withdrawn</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label for="resume_version">Resume Version</label>
+            <input type="text" id="resume_version" name="resume_version" class="form-control" value="{{ app.resume_version if app else '' }}" placeholder="e.g. Resume_Backend_v2.pdf">
+        </div>
+        
+        <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem; margin-top: 1.5rem; margin-bottom: 1.5rem;">
+            <input type="checkbox" id="cover_letter_sent" name="cover_letter_sent" {% if app and app.cover_letter_sent %}checked{% endif %} style="width: 1.2rem; height: 1.2rem; cursor: pointer;">
+            <label for="cover_letter_sent" style="margin-bottom: 0; cursor: pointer;">Cover Letter Included</label>
+        </div>
+        
+        <div class="form-group">
+            <label for="interview_data">Interview Notes / Data (JSON/Text)</label>
+            <textarea id="interview_data" name="interview_data" class="form-control" placeholder='Notes about interviews, technical questions asked, etc.'>{{ app.interview_data if app and app.interview_data else '' }}</textarea>
+        </div>
+        
+        <div style="margin-top: 2rem;">
+            <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 0.8rem;">
+                <i class="fa-solid fa-save"></i> Save Application
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
