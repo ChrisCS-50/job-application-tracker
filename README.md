@@ -52,14 +52,19 @@ SOURCE schema.sql;
 *(Note: As per assignment prerequisites, the tables are already initialized/seeded in the `job_tracker` database).*
 
 ### 2. Environment Configuration
-Create a `.env` file in the root directory mapping to your database credentials:
+Copy the provided template and fill in **your own** database credentials:
+```bash
+cp .env.example .env
+```
+Then edit `.env` with your values:
 ```env
 DB_HOST=localhost
-DB_USER=root
-DB_PASSWORD=root
+DB_USER=your_mysql_username
+DB_PASSWORD=your_mysql_password
 DB_DATABASE=job_tracker
 DB_PORT=3306
 ```
+> ⚠️ **Never commit your `.env` file.** It is already listed in `.gitignore`. The `.env.example` file (with placeholder values) is provided for reference only.
 
 ### 3. Server Initialization
 It is highly recommended to run this server isolated within a Python virtual environment.
