@@ -2,7 +2,13 @@
 
 {% block content %}
 <div class="page-header">
-    <h1><i class="fa-solid fa-chart-line" style="color: var(--primary); margin-right: 10px;"></i> Dashboard Overview</h1>
+    <h1><i class="fa-solid fa-chart-line" style="color: var(--primary); margin-right: 10px;"></i>
+        {% if current_user.is_admin %}
+            {% if view_scope == 'all' %}Platform Dashboard{% else %}My Dashboard{% endif %}
+        {% else %}
+            My Dashboard
+        {% endif %}
+    </h1>
     <div>
         <a href="{{ url_for('add_application') }}" class="btn btn-primary">
             <i class="fa-solid fa-plus"></i> New Application
@@ -10,8 +16,15 @@
     </div>
 </div>
 
+{% if current_user.is_admin %}
+<div style="margin-bottom: 1.5rem; display: flex; gap: 10px;">
+    <a href="{{ url_for('dashboard', view='all') }}" class="btn {% if view_scope == 'all' %}btn-primary{% else %}btn-outlined{% endif %}"><i class="fa-solid fa-globe"></i> All Users' Metrics</a>
+    <a href="{{ url_for('dashboard', view='personal') }}" class="btn {% if view_scope == 'personal' %}btn-primary{% else %}btn-outlined{% endif %}"><i class="fa-solid fa-user"></i> My Metrics</a>
+</div>
+{% endif %}
+
 <div class="dashboard-grid">
-    <div class="glass-card stat-card">
+    <a href="{{ url_for('list_applications', view=view_scope) }}" class="glass-card stat-card" style="text-decoration: none; color: inherit; display: flex;">
         <div class="stat-icon" style="color: var(--text-main); background: rgba(255, 255, 255, 0.1);">
             <i class="fa-solid fa-paper-plane"></i>
         </div>
@@ -19,9 +32,9 @@
             <h3>{{ stats.total_applications }}</h3>
             <p>Total Applications</p>
         </div>
-    </div>
+    </a>
     
-    <div class="glass-card stat-card">
+    <a href="{{ url_for('list_applications', view=view_scope) }}" class="glass-card stat-card" style="text-decoration: none; color: inherit; display: flex;">
         <div class="stat-icon" style="color: var(--warning); background: rgba(245, 158, 11, 0.15);">
             <i class="fa-solid fa-hourglass-half"></i>
         </div>
@@ -29,70 +42,265 @@
             <h3>{{ stats.active_applications }}</h3>
             <p>Active Applications</p>
         </div>
-    </div>
+    </a>
+
+    <a href="{{ url_for('list_companies', view=view_scope) }}" class="glass-card stat-card" style="text-decoration: none; color: inherit; display: flex;">
+        <div class="stat-icon" style="color: #a78bfa; background: rgba(167, 139, 250, 0.15);">
+            <i class="fa-solid fa-building"></i>
+        </div>
+        <div class="stat-info">
+            <h3>{{ stats.total_companies }}</h3>
+            <p>Companies Tracked</p>
+        </div>
+    </a>
+
+    <a href="{{ url_for('list_jobs', view=view_scope) }}" class="glass-card stat-card" style="text-decoration: none; color: inherit; display: flex;">
+        <div class="stat-icon" style="color: #f472b6; background: rgba(244, 114, 182, 0.15);">
+            <i class="fa-solid fa-briefcase"></i>
+        </div>
+        <div class="stat-info">
+            <h3>{{ stats.total_jobs }}</h3>
+            <p>Jobs Tracked</p>
+        </div>
+    </a>
     
-    <div class="glass-card stat-card">
-        <div class="stat-icon" style="color: var(--primary); background: rgba(59, 130, 246, 0.15);">
+    {% if current_user.is_admin and view_scope == 'all' %}
+    <a href="{{ url_for('admin_panel') }}" class="glass-card stat-card" style="text-decoration: none; color: inherit; display: flex;">
+        <div class="stat-icon" style="color: #38bdf8; background: rgba(56, 189, 248, 0.15);">
             <i class="fa-solid fa-users"></i>
         </div>
         <div class="stat-info">
-            <h3>{{ stats.interviews }}</h3>
-            <p>Interviews Processed</p>
+            <h3>{{ stats.total_users }}</h3>
+            <p>Platform Users</p>
         </div>
-    </div>
-    
-    <div class="glass-card stat-card">
+    </a>
+    {% endif %}
+
+    <a href="{{ url_for('list_offers', view=view_scope) }}" class="glass-card stat-card" style="text-decoration: none; color: inherit; display: flex;">
         <div class="stat-icon" style="color: var(--accent); background: rgba(16, 185, 129, 0.15);">
             <i class="fa-solid fa-trophy"></i>
         </div>
         <div class="stat-info">
-            <h3>{{ stats.offers }}</h3>
+            <h3>{{ stats.offers + stats.offer_accepted }}</h3>
             <p>Job Offers</p>
+        </div>
+    </a>
+</div>
+
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem;">
+    <!-- Recent Activity -->
+    <div class="glass-card">
+        <h2 style="margin-bottom: 1.5rem;"><i class="fa-solid fa-clock-rotate-left" style="color: var(--primary);"></i> Recent Activity</h2>
+        {% if stats.recent_applications %}
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Company</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for app in stats.recent_applications %}
+                    <tr>
+                        <td>{{ app.application_date }}</td>
+                        <td style="font-weight: 600; font-size: 1.05rem;">
+                            <a href="{{ url_for('company_profile', id=app.company_id) }}" style="color: var(--text-main); text-decoration: none;">
+                                <i class="fa-regular fa-building" style="color: var(--text-muted); margin-right: 5px;"></i> {{ app.company_name }}
+                            </a>
+                        </td>
+                        <td>
+                            <span class="badge 
+                                {% if app.status == 'Applied' %}badge-primary
+                                {% elif app.status in ['Screening', 'Phone Screen', 'Interview Scheduled', 'Interview', 'Interview Completed'] %}badge-warning
+                                {% elif app.status in ['Offer', 'Offer Accepted'] %}badge-success
+                                {% else %}badge-danger{% endif %}">
+                                {{ app.status }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div style="text-align: center; padding: 3rem 1rem; color: var(--text-muted);">
+            <i class="fa-xl fa-regular fa-folder-open" style="margin-bottom: 1rem; font-size: 3rem; opacity: 0.5;"></i>
+            <p>No applications have been recorded yet.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Analytics Chart -->
+    <div class="glass-card">
+        <h2 style="margin-bottom: 1.5rem;"><i class="fa-solid fa-chart-pie" style="color: var(--info);"></i> Application Funnel</h2>
+        <div style="position: relative; height: 300px; width: 100%;">
+            <canvas id="funnelChart"></canvas>
         </div>
     </div>
 </div>
 
-<div class="glass-card">
-    <h2 style="margin-bottom: 1.5rem;"><i class="fa-solid fa-clock-rotate-left" style="color: var(--primary);"></i> Recent Activity</h2>
-    {% if stats.recent_applications %}
-    <div class="table-container">
-        <table>
-            <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Company</th>
-                    <th>Job Title</th>
-                    <th>Status</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for app in stats.recent_applications %}
-                <tr>
-                    <td>{{ app.application_date }}</td>
-                    <td style="font-weight: 500; font-size: 1.05rem;">
-                        <i class="fa-regular fa-building" style="color: var(--text-muted); margin-right: 5px;"></i> {{ app.company_name }}
-                    </td>
-                    <td>{{ app.job_title }}</td>
-                    <td>
-                        <span class="badge 
-                            {% if app.status == 'Applied' %}badge-primary
-                            {% elif app.status in ['Screening', 'Interview'] %}badge-warning
-                            {% elif app.status == 'Offer' %}badge-success
-                            {% else %}badge-danger{% endif %}">
-                            {{ app.status }}
-                        </span>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1.5rem;">
+    <!-- Status Bar Chart -->
+    <div class="glass-card">
+        <h2 style="margin-bottom: 1.5rem;"><i class="fa-solid fa-chart-column" style="color: var(--primary);"></i> Application Status Breakdown</h2>
+        <div style="position: relative; height: 300px; width: 100%;">
+            <canvas id="statusBarChart"></canvas>
+        </div>
     </div>
-    {% else %}
-    <div style="text-align: center; padding: 3rem 1rem; color: var(--text-muted);">
-        <i class="fa-xl fa-regular fa-folder-open" style="margin-bottom: 1rem; font-size: 3rem; opacity: 0.5;"></i>
-        <p>No applications have been recorded yet.</p>
-        <a href="{{ url_for('add_application') }}" style="margin-top: 1rem;" class="btn btn-outlined">Record First Application</a>
+    
+    <!-- Salary Analytics Chart -->
+    <div class="glass-card">
+        <h2 style="margin-bottom: 1.5rem;"><i class="fa-solid fa-money-bill-wave" style="color: var(--warning);"></i> Application Salary Ranges</h2>
+        <div style="position: relative; height: 300px; width: 100%;">
+            <canvas id="salaryChart"></canvas>
+        </div>
     </div>
-    {% endif %}
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const ctx = document.getElementById('funnelChart').getContext('2d');
+        
+        let applied = {{ stats.applied }};
+        let screening = {{ stats.screening }};
+        let phone_screen = {{ stats.phone_screen }};
+        let interview_scheduled = {{ stats.interview_scheduled }};
+        let interviews = {{ stats.interviews }};
+        let interview_completed = {{ stats.interview_completed }};
+        let offers = {{ stats.offers }};
+        let offer_accepted = {{ stats.offer_accepted }};
+        let rejected = {{ stats.rejections }};
+        let withdrawn = {{ stats.withdrawn }};
+
+        const data = {
+            labels: ['Applied', 'Screening', 'Phone Screen', 'Interview Scheduled', 'Interview', 'Interview Completed', 'Offer', 'Offer Accepted', 'Rejected', 'Withdrawn'],
+            datasets: [{
+                data: [applied, screening, phone_screen, interview_scheduled, interviews, interview_completed, offers, offer_accepted, rejected, withdrawn],
+                backgroundColor: [
+                    '#3b82f6', // blue (Applied)
+                    '#8b5cf6', // purple (Screening)
+                    '#ec4899', // pink (Phone Screen)
+                    '#f97316', // orange (Interview Scheduled)
+                    '#f59e0b', // amber (Interview)
+                    '#eab308', // yellow (Interview Completed)
+                    '#10b981', // green (Offer)
+                    '#14b8a6', // teal (Offer Accepted)
+                    '#ef4444', // red (Rejected)
+                    '#64748b'  // gray (Withdrawn)
+                ],
+                borderWidth: 0,
+                hoverOffset: 4
+            }]
+        };
+
+        const getTextColor = () => {
+            return getComputedStyle(document.documentElement).getPropertyValue('--text-main').trim() || (document.documentElement.getAttribute('data-theme') === 'dark' ? '#f4f4f5' : '#0f172a');
+        };
+
+        const funnelChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: data,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: getTextColor(),
+                            font: { family: "'Inter', sans-serif" }
+                        }
+                    }
+                },
+                cutout: '65%'
+            }
+        });
+
+        // Listen for theme changes to recalculate and redraw text!
+        window.addEventListener('themeChanged', () => {
+            funnelChart.options.plugins.legend.labels.color = getTextColor();
+            funnelChart.update();
+            salaryChart.options.scales.x.ticks.color = getTextColor();
+            salaryChart.options.scales.y.ticks.color = getTextColor();
+            salaryChart.options.plugins.legend.labels.color = getTextColor();
+            salaryChart.update();
+            statusBarChart.options.scales.x.ticks.color = getTextColor();
+            statusBarChart.options.scales.y.ticks.color = getTextColor();
+            statusBarChart.update();
+        });
+
+        // Status Bar Chart Logic
+        const statusCtx = document.getElementById('statusBarChart').getContext('2d');
+        const statusBarChart = new Chart(statusCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Applied', 'Screening', 'Phone Screen', 'Interview Scheduled', 'Interview', 'Interview Completed', 'Offer', 'Offer Accepted', 'Rejected', 'Withdrawn'],
+                datasets: [{
+                    label: 'Applications',
+                    data: [applied, screening, phone_screen, interview_scheduled, interviews, interview_completed, offers, offer_accepted, rejected, withdrawn],
+                    backgroundColor: [
+                        '#3b82f6', '#8b5cf6', '#ec4899', '#f97316', '#f59e0b', '#eab308', '#10b981', '#14b8a6', '#ef4444', '#64748b'
+                    ],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { ticks: { color: getTextColor(), font: { family: "'Inter', sans-serif" } } },
+                    y: { beginAtZero: true, ticks: { stepSize: 1, color: getTextColor(), font: { family: "'Inter', sans-serif" } } }
+                },
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+
+        // Salary Chart Logic
+        const salaryCtx = document.getElementById('salaryChart').getContext('2d');
+        const salaryBins = {
+            "< $50k": {{ stats.salary_bins['< $50k']|default(0) }},
+            "$50k - $80k": {{ stats.salary_bins['$50k - $80k']|default(0) }},
+            "$80k - $120k": {{ stats.salary_bins['$80k - $120k']|default(0) }},
+            "$120k - $150k": {{ stats.salary_bins['$120k - $150k']|default(0) }},
+            "$150k+": {{ stats.salary_bins['$150k+']|default(0) }}
+        };
+
+        const salaryChart = new Chart(salaryCtx, {
+            type: 'bar',
+            data: {
+                labels: Object.keys(salaryBins),
+                datasets: [{
+                    label: 'Applications',
+                    data: Object.values(salaryBins),
+                    backgroundColor: 'rgba(56, 189, 248, 0.7)',
+                    borderColor: '#38bdf8',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        ticks: { color: getTextColor(), font: { family: "'Inter', sans-serif" } }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        ticks: { stepSize: 1, color: getTextColor(), font: { family: "'Inter', sans-serif" } }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        labels: { color: getTextColor(), font: { family: "'Inter', sans-serif" } }
+                    }
+                }
+            }
+        });
+    });
+</script>
 {% endblock %}

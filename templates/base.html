@@ -10,6 +10,13 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Main Style -->
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <!-- Inline Theme Script (Avoids flash of unstyled content) -->
+    <script>
+        (function() {
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            document.documentElement.setAttribute('data-theme', currentTheme);
+        })();
+    </script>
 </head>
 <body>
     <aside class="sidebar">
@@ -42,14 +49,42 @@
                     <i class="fa-regular fa-address-book" style="width: 25px;"></i> Contacts
                 </a>
             </li>
+            
+            {% if current_user.is_authenticated and current_user.is_admin %}
+            <li style="margin-top: 1rem;">
+                <a href="{{ url_for('admin_panel') }}" class="{% if 'admin' in request.endpoint %}active{% endif %}">
+                    <i class="fa-solid fa-shield-halved" style="width: 25px;"></i> Admin Panel
+                </a>
+            </li>
+            {% endif %}
+
             <li style="margin-top: 2rem;">
                 <a href="{{ url_for('job_match') }}" class="{% if 'match' in request.endpoint %}active{% endif %}">
-                    <i class="fa-solid fa-wand-magic-sparkles" style="width: 25px; color: var(--warning);"></i> Job Match AI
+                    <i class="fa-solid fa-wand-magic-sparkles" style="width: 25px; color: var(--warning);"></i> Job Match
+                </a>
+            </li>
+            <li>
+                <a href="{{ url_for('logout') }}" style="color: var(--danger); font-weight: 500;">
+                    <i class="fa-solid fa-arrow-right-from-bracket" style="width: 25px;"></i> Sign Out
                 </a>
             </li>
         </ul>
+        <div class="sidebar-footer">
+            <button id="theme-toggle">
+                <i class="fa-solid fa-circle-half-stroke" style="width: 25px; color: var(--primary);"></i> Setup Theme
+            </button>
+        </div>
     </aside>
     
+    <script>
+        document.getElementById('theme-toggle').addEventListener('click', () => {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            window.dispatchEvent(new Event('themeChanged'));
+        });
+    </script>
     <main class="main-content">
         <div class="flash-messages">
             {% with messages = get_flashed_messages(with_categories=true) %}
@@ -65,5 +100,31 @@
         
         {% block content %}{% endblock %}
     </main>
+
+    <!-- Global Hover Tooltip Logic -->
+    <div id="global-tooltip" class="floating-tooltip"></div>
+    <script>
+        const tooltip = document.getElementById('global-tooltip');
+        
+        document.querySelectorAll('.hover-tooltip').forEach(elem => {
+            elem.addEventListener('mouseenter', (e) => {
+                const content = elem.getAttribute('data-tooltip');
+                if(!content) return;
+                
+                tooltip.style.opacity = '1';
+                tooltip.innerHTML = content.replace(/\n/g, '<br/>');
+            });
+            
+            elem.addEventListener('mousemove', (e) => {
+                // follow cursor precisely
+                tooltip.style.left = (e.pageX + 15) + 'px';
+                tooltip.style.top = (e.pageY + 15) + 'px';
+            });
+            
+            elem.addEventListener('mouseleave', () => {
+                tooltip.style.opacity = '0';
+            });
+        });
+    </script>
 </body>
 </html>

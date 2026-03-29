@@ -12,16 +12,30 @@
 <div class="glass-card" style="max-width: 800px; margin: 0 auto;">
     <form action="" method="POST">
         
-        <div class="form-group">
-            <label for="job_id">Job / Position *</label>
-            <select id="job_id" name="job_id" class="form-control" required style="cursor: pointer;">
-                <option value="">-- Select Job --</option>
-                {% for j in jobs %}
-                <option value="{{ j.job_id }}" {% if app and app.job_id == j.job_id %}selected{% endif %}>
-                    {{ j.job_title }} at {{ j.company_name }}
-                </option>
-                {% endfor %}
-            </select>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+            <div class="form-group" style="margin-bottom: 0;">
+                <label for="company_id">Company *</label>
+                <select id="company_id" name="company_id" class="form-control" required style="cursor: pointer;">
+                    <option value="">-- Select Company --</option>
+                    {% for c in companies %}
+                    <option value="{{ c.company_id }}" {% if app and app.company_id == c.company_id %}selected{% endif %}>
+                        {{ c.company_name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group" style="margin-bottom: 0;">
+                <label for="job_id">Job / Position *</label>
+                <select id="job_id" name="job_id" class="form-control" required style="cursor: pointer;" {% if not app %}disabled{% endif %}>
+                    <option value="">-- Select Job --</option>
+                    {% for j in jobs %}
+                    <option value="{{ j.job_id }}" data-company="{{ j.company_id }}" {% if app and app.job_id == j.job_id %}selected{% endif %}>
+                        {{ j.job_title }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
         </div>
         
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
@@ -34,8 +48,12 @@
                 <select id="status" name="status" class="form-control">
                     <option value="Applied" {% if app and app.status == 'Applied' %}selected{% endif %}>Applied</option>
                     <option value="Screening" {% if app and app.status == 'Screening' %}selected{% endif %}>Screening</option>
+                    <option value="Phone Screen" {% if app and app.status == 'Phone Screen' %}selected{% endif %}>Phone Screen</option>
+                    <option value="Interview Scheduled" {% if app and app.status == 'Interview Scheduled' %}selected{% endif %}>Interview Scheduled</option>
                     <option value="Interview" {% if app and app.status == 'Interview' %}selected{% endif %}>Interview</option>
+                    <option value="Interview Completed" {% if app and app.status == 'Interview Completed' %}selected{% endif %}>Interview Completed</option>
                     <option value="Offer" {% if app and app.status == 'Offer' %}selected{% endif %}>Offer</option>
+                    <option value="Offer Accepted" {% if app and app.status == 'Offer Accepted' %}selected{% endif %}>Offer Accepted</option>
                     <option value="Rejected" {% if app and app.status == 'Rejected' %}selected{% endif %}>Rejected</option>
                     <option value="Withdrawn" {% if app and app.status == 'Withdrawn' %}selected{% endif %}>Withdrawn</option>
                 </select>
@@ -53,6 +71,19 @@
         </div>
         
         <div class="form-group">
+            <label for="interview_contacts">Interview Contact(s)</label>
+            <small style="display: block; margin-bottom: 5px; color: var(--text-muted);">Hold Ctrl/Cmd to select multiple contacts associated with this company.</small>
+            <select id="interview_contacts" name="interview_contacts" class="form-control" multiple style="height: auto; min-height: 100px; padding: 0.5rem; cursor: pointer;">
+                {% for contact in contacts %}
+                <option value="{{ contact.contact_id }}" data-company="{{ contact.company_id }}"
+                    {% if app and app.interview_contacts and contact.contact_id|string in app.interview_contacts.split(',') %}selected{% endif %}>
+                    {{ contact.contact_name }} {% if contact.title %}({{ contact.title }}){% endif %}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="form-group">
             <label for="interview_data">Interview Notes / Data (JSON/Text)</label>
             <textarea id="interview_data" name="interview_data" class="form-control" placeholder='Notes about interviews, technical questions asked, etc.'>{{ app.interview_data if app and app.interview_data else '' }}</textarea>
         </div>
@@ -64,4 +95,71 @@
         </div>
     </form>
 </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const companySelect = document.getElementById('company_id');
+    const jobSelect = document.getElementById('job_id');
+    const contactSelect = document.getElementById('interview_contacts');
+    
+    function filterJobsAndContacts() {
+        const companyId = companySelect.value;
+        
+        // Reset sub-selects if no company
+        if (!companyId) {
+            jobSelect.value = '';
+            jobSelect.disabled = true;
+            for (let i = 0; i < jobSelect.options.length; i++) {
+                if (jobSelect.options[i].value !== '') jobSelect.options[i].style.display = 'none';
+            }
+            if (contactSelect) {
+                for (let i = 0; i < contactSelect.options.length; i++) {
+                    contactSelect.options[i].style.display = 'none';
+                    contactSelect.options[i].selected = false;
+                }
+            }
+            return;
+        }
+        
+        // Handle Jobs
+        jobSelect.disabled = false;
+        let validSelection = false;
+        const currentJobId = jobSelect.value;
+        
+        for (let i = 0; i < jobSelect.options.length; i++) {
+            const opt = jobSelect.options[i];
+            if (opt.value === '') continue;
+            
+            if (opt.getAttribute('data-company') === companyId) {
+                opt.style.display = '';
+                if (opt.value === currentJobId) validSelection = true;
+            } else {
+                opt.style.display = 'none';
+            }
+        }
+        if (!validSelection) jobSelect.value = '';
+        
+        // Handle Contacts
+        if (contactSelect) {
+            for (let i = 0; i < contactSelect.options.length; i++) {
+                const opt = contactSelect.options[i];
+                if (opt.getAttribute('data-company') === companyId) {
+                    opt.style.display = '';
+                } else {
+                    opt.style.display = 'none';
+                    opt.selected = false; // Deselect if it belongs to another company
+                }
+            }
+        }
+    }
+    
+    companySelect.addEventListener('change', filterJobsAndContacts);
+    
+    // Run once on load for edit mode
+    if (companySelect.value) {
+        filterJobsAndContacts();
+    }
+});
+</script>
 {% endblock %}

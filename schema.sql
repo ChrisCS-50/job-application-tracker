@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS applications (
     resume_version VARCHAR(50),
     cover_letter_sent BOOLEAN,
     interview_data JSON,
+    interview_contacts VARCHAR(255),
     FOREIGN KEY (job_id) REFERENCES jobs(job_id) ON DELETE CASCADE
 );
 

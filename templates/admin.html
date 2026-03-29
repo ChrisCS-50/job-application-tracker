@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+    <h1><i class="fa-solid fa-shield-halved" style="color: var(--primary);"></i> Admin Panel</h1>
+</div>
+
+<div class="glass-card">
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Username</th>
+                    <th>Role</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in users %}
+                <tr>
+                    <td style="font-weight: 500;">{{ u.id }}</td>
+                    <td>{{ u.username }}</td>
+                    <td>
+                        <span class="badge {% if u.is_admin %}badge-success{% else %}badge-warning{% endif %}">
+                            {% if u.is_admin %}Admin{% else %}User{% endif %}
+                        </span>
+                    </td>
+                    <td>
+                        {% if u.id != current_user.id %}
+                        <form action="{{ url_for('toggle_admin', id=u.id) }}" method="POST" style="display:inline;">
+                            <button type="submit" class="btn {% if u.is_admin %}btn-danger{% else %}btn-success{% endif %}" style="padding: 0.3rem 0.6rem; font-size: 0.85rem;">
+                                {% if u.is_admin %}Revoke Admin{% else %}Grant Admin{% endif %}
+                            </button>
+                        </form>
+                        {% else %}
+                        <span style="color: var(--text-muted); font-size: 0.85rem;"><i class="fa-solid fa-lock"></i> Current User</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="4" style="text-align: center; color: var(--text-muted);">No users found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

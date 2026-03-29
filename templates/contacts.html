@@ -6,9 +6,53 @@
     <a href="{{ url_for('add_contact') }}" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Add Contact</a>
 </div>
 
+<!-- Filter Bar -->
+<div class="glass-card" style="margin-bottom: 1.5rem; padding: 1rem 1.5rem;">
+    <div style="display: flex; flex-wrap: wrap; gap: 0.8rem; align-items: center;">
+        <div style="flex: 1; min-width: 180px;">
+            <label style="font-size: 0.78rem; color: var(--text-muted); display: block; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.05em;">Search</label>
+            <div class="search-wrapper" style="margin-bottom: 0;">
+                <i class="fa-solid fa-search"></i>
+                <input type="text" class="form-control" id="searchInput" placeholder="Search contacts...">
+            </div>
+        </div>
+        <div style="min-width: 160px;">
+            <label style="font-size: 0.78rem; color: var(--text-muted); display: block; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.05em;">Company</label>
+            <select class="form-control filter-select" data-col="2">
+                <option value="">All Companies</option>
+                {% set companies = contacts | map(attribute='company_name') | select | unique | sort %}
+                {% for co in companies %}<option value="{{ co }}">{{ co }}</option>{% endfor %}
+            </select>
+        </div>
+        <div style="min-width: 160px;">
+            <label style="font-size: 0.78rem; color: var(--text-muted); display: block; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.05em;">Title</label>
+            <select class="form-control filter-select" data-col="1">
+                <option value="">All Titles</option>
+                {% set titles = contacts | map(attribute='title') | select | unique | sort %}
+                {% for t in titles %}<option value="{{ t }}">{{ t }}</option>{% endfor %}
+            </select>
+        </div>
+        {% if current_user.is_admin %}
+        <div style="min-width: 140px;">
+            <label style="font-size: 0.78rem; color: var(--text-muted); display: block; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.05em;">Owner</label>
+            <select class="form-control filter-select" data-col="5">
+                <option value="">All Owners</option>
+                {% set owners = contacts | map(attribute='owner_username') | select | unique | sort %}
+                {% for o in owners %}<option value="{{ o }}">{{ o }}</option>{% endfor %}
+            </select>
+        </div>
+        {% endif %}
+        <div style="display: flex; align-items: flex-end; padding-bottom: 2px;">
+            <button onclick="clearFilters()" class="btn btn-outlined" style="padding: 0.45rem 1rem;">
+                <i class="fa-solid fa-rotate-left"></i> Reset
+            </button>
+        </div>
+    </div>
+</div>
+
 <div class="glass-card">
     <div class="table-container">
-        <table>
+        <table id="mainTable">
             <thead>
                 <tr>
                     <th>Name</th>
@@ -16,12 +60,13 @@
                     <th>Company</th>
                     <th>Email</th>
                     <th>Phone</th>
+                    {% if current_user.is_admin %}<th>Owner</th>{% endif %}
                     <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
                 {% for contact in contacts %}
-                <tr>
+                <tr {% if contact.notes %}class="hover-tooltip" data-tooltip="<strong style='color: var(--warning); font-size: 1.1rem;'><i class='fa-solid fa-clipboard-user'></i> Internal Notes:</strong><br><br>{{ contact.notes|e }}"{% endif %}>
                     <td style="font-weight: 500;">
                         {{ contact.contact_name }}
                         {% if contact.linkedin_url %}
@@ -33,25 +78,51 @@
                     <td>
                         {% if contact.email %}
                         <a href="mailto:{{ contact.email }}" class="badge badge-info"><i class="fa-regular fa-envelope"></i> {{ contact.email }}</a>
-                        {% else %}
-                        -
-                        {% endif %}
+                        {% else %}-{% endif %}
                     </td>
                     <td>{{ contact.phone or '-' }}</td>
+                    {% if current_user.is_admin %}<td style="font-size: 0.85rem; color: var(--text-muted);">{{ contact.owner_username or '—' }}</td>{% endif %}
                     <td class="actions-cell">
                         <a href="{{ url_for('edit_contact', id=contact.contact_id) }}" class="btn btn-outlined" style="padding: 0.4rem 0.8rem;"><i class="fa-solid fa-pen"></i></a>
-                        <form action="{{ url_for('delete_contact', id=contact.contact_id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Delete this contact?');">
-                            <button type="submit" class="btn btn-danger" style="padding: 0.4rem 0.8rem;"><i class="fa-solid fa-trash"></i></button>
+                        <form action="{{ url_for('delete_contact', id=contact.contact_id) }}" method="POST" style="display:inline;">
+                            <button type="submit" class="btn btn-danger" style="padding: 0.4rem 0.8rem;" onclick="return confirm('Delete this contact?');"><i class="fa-solid fa-trash" style="pointer-events: none;"></i></button>
                         </form>
                     </td>
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2rem;">No contacts saved yet. Networking is key!</td>
+                    <td colspan="{{ 7 if current_user.is_admin else 6 }}" style="text-align: center; color: var(--text-muted); padding: 2rem;">No contacts saved yet. Networking is key!</td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
 </div>
+
+<script>
+function filterTable() {
+    const search = document.getElementById('searchInput').value.toLowerCase();
+    const selects = document.querySelectorAll('.filter-select');
+    document.querySelectorAll('#mainTable tbody tr').forEach(row => {
+        if (row.cells.length <= 1) return;
+        const text = row.innerText.toLowerCase();
+        let show = text.includes(search);
+        selects.forEach(sel => {
+            if (sel.value && show) {
+                const col = parseInt(sel.dataset.col);
+                const cell = row.cells[col];
+                if (cell && !cell.innerText.toLowerCase().includes(sel.value.toLowerCase())) show = false;
+            }
+        });
+        row.style.display = show ? '' : 'none';
+    });
+}
+function clearFilters() {
+    document.getElementById('searchInput').value = '';
+    document.querySelectorAll('.filter-select').forEach(s => s.value = '');
+    filterTable();
+}
+document.getElementById('searchInput').addEventListener('keyup', filterTable);
+document.querySelectorAll('.filter-select').forEach(s => s.addEventListener('change', filterTable));
+</script>
 {% endblock %}

@@ -6,9 +6,55 @@
     <a href="{{ url_for('add_job') }}" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Add Job</a>
 </div>
 
+<!-- Filter Bar -->
+<div class="glass-card" style="margin-bottom: 1.5rem; padding: 1rem 1.5rem;">
+    <div style="display: flex; flex-wrap: wrap; gap: 0.8rem; align-items: center;">
+        <div style="flex: 1; min-width: 180px;">
+            <label style="font-size: 0.78rem; color: var(--text-muted); display: block; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.05em;">Search</label>
+            <div class="search-wrapper" style="margin-bottom: 0;">
+                <i class="fa-solid fa-search"></i>
+                <input type="text" class="form-control" id="searchInput" placeholder="Search jobs...">
+            </div>
+        </div>
+        <div style="min-width: 160px;">
+            <label style="font-size: 0.78rem; color: var(--text-muted); display: block; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.05em;">Company</label>
+            <select class="form-control filter-select" data-col="1">
+                <option value="">All Companies</option>
+                {% set companies = jobs | map(attribute='company_name') | select | unique | sort %}
+                {% for co in companies %}<option value="{{ co }}">{{ co }}</option>{% endfor %}
+            </select>
+        </div>
+        <div style="min-width: 140px;">
+            <label style="font-size: 0.78rem; color: var(--text-muted); display: block; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.05em;">Type</label>
+            <select class="form-control filter-select" data-col="2">
+                <option value="">All Types</option>
+                <option value="Full-time">Full-time</option>
+                <option value="Part-time">Part-time</option>
+                <option value="Contract">Contract</option>
+                <option value="Internship">Internship</option>
+            </select>
+        </div>
+        {% if current_user.is_admin %}
+        <div style="min-width: 140px;">
+            <label style="font-size: 0.78rem; color: var(--text-muted); display: block; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.05em;">Owner</label>
+            <select class="form-control filter-select" data-col="5">
+                <option value="">All Owners</option>
+                {% set owners = jobs | map(attribute='owner_username') | select | unique | sort %}
+                {% for o in owners %}<option value="{{ o }}">{{ o }}</option>{% endfor %}
+            </select>
+        </div>
+        {% endif %}
+        <div style="display: flex; align-items: flex-end; padding-bottom: 2px;">
+            <button onclick="clearFilters()" class="btn btn-outlined" style="padding: 0.45rem 1rem;">
+                <i class="fa-solid fa-rotate-left"></i> Reset
+            </button>
+        </div>
+    </div>
+</div>
+
 <div class="glass-card">
     <div class="table-container">
-        <table>
+        <table id="mainTable">
             <thead>
                 <tr>
                     <th>Job Title</th>
@@ -16,13 +62,20 @@
                     <th>Type</th>
                     <th>Salary Range</th>
                     <th>Posted</th>
+                    {% if current_user.is_admin %}<th>Owner</th>{% endif %}
                     <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
                 {% for job in jobs %}
                 <tr>
-                    <td style="font-weight: 500;">{{ job.job_title }}
+                    <td style="font-weight: 600; font-size: 1.05rem;">
+                        {{ job.job_title }}
+                        {% if job.requirements %}
+                        <span class="hover-tooltip" style="cursor: pointer; color: var(--primary); margin-left: 5px; font-size: 0.9rem;" data-tooltip="<strong><i class='fa-solid fa-list-check'></i> Requirements:</strong><br><br>{{ job.requirements|e }}">
+                            <i class="fa-solid fa-circle-info"></i>
+                        </span>
+                        {% endif %}
                         {% if job.job_url %}
                         <a href="{{ job.job_url }}" target="_blank" style="margin-left: 0.5rem; font-size: 0.8rem;"><i class="fa-solid fa-link"></i></a>
                         {% endif %}
@@ -32,27 +85,52 @@
                     <td>
                         {% if job.salary_min and job.salary_max %}
                         ${{ "{:,.0f}".format(job.salary_min) }} - ${{ "{:,.0f}".format(job.salary_max) }}
-                        {% elif job.salary_min %}
-                        ${{ "{:,.0f}".format(job.salary_min) }}+
-                        {% else %}
-                        -
-                        {% endif %}
+                        {% elif job.salary_min %}${{ "{:,.0f}".format(job.salary_min) }}+
+                        {% else %}-{% endif %}
                     </td>
                     <td>{{ job.date_posted or '-' }}</td>
+                    {% if current_user.is_admin %}<td style="font-size: 0.85rem; color: var(--text-muted);">{{ job.owner_username or '—' }}</td>{% endif %}
                     <td class="actions-cell">
                         <a href="{{ url_for('edit_job', id=job.job_id) }}" class="btn btn-outlined" style="padding: 0.4rem 0.8rem;"><i class="fa-solid fa-pen"></i></a>
-                        <form action="{{ url_for('delete_job', id=job.job_id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Delete this job? This will delete associated applications.');">
-                            <button type="submit" class="btn btn-danger" style="padding: 0.4rem 0.8rem;"><i class="fa-solid fa-trash"></i></button>
+                        <form action="{{ url_for('delete_job', id=job.job_id) }}" method="POST" style="display:inline;">
+                            <button type="submit" class="btn btn-danger" style="padding: 0.4rem 0.8rem;" onclick="return confirm('Delete this job? This will delete associated applications.');"><i class="fa-solid fa-trash" style="pointer-events: none;"></i></button>
                         </form>
                     </td>
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2rem;">No jobs found. Start saving some!</td>
+                    <td colspan="{{ 7 if current_user.is_admin else 6 }}" style="text-align: center; color: var(--text-muted); padding: 2rem;">No jobs found. Start saving some!</td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
 </div>
+
+<script>
+function filterTable() {
+    const search = document.getElementById('searchInput').value.toLowerCase();
+    const selects = document.querySelectorAll('.filter-select');
+    document.querySelectorAll('#mainTable tbody tr').forEach(row => {
+        if (row.cells.length <= 1) return;
+        const text = row.innerText.toLowerCase();
+        let show = text.includes(search);
+        selects.forEach(sel => {
+            if (sel.value && show) {
+                const col = parseInt(sel.dataset.col);
+                const cell = row.cells[col];
+                if (cell && !cell.innerText.toLowerCase().includes(sel.value.toLowerCase())) show = false;
+            }
+        });
+        row.style.display = show ? '' : 'none';
+    });
+}
+function clearFilters() {
+    document.getElementById('searchInput').value = '';
+    document.querySelectorAll('.filter-select').forEach(s => s.value = '');
+    filterTable();
+}
+document.getElementById('searchInput').addEventListener('keyup', filterTable);
+document.querySelectorAll('.filter-select').forEach(s => s.addEventListener('change', filterTable));
+</script>
 {% endblock %}
