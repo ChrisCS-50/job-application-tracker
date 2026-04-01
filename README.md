@@ -10,13 +10,13 @@
 
 ---
 
-## 📖 Project Overview
+## Project Overview
 
 JobTracker Pro is a Full-Stack Database Application designed to meticulously track the job hunting lifecycle. Built with a robust **Python/Flask** backend and a fully normalized **MySQL** relational database, the platform leverages dynamic SQL queries and parameterization for uncompromising data integrity. 
 
 This build integrates **Florida International University (FIU)** brand aesthetics (Navy `#081E3F` & Gold `#CC8A00`) alongside modern Enterprise SaaS design principles, offering both Light and Dark mode experiences.
 
-## ✨ Key Features
+## Key Features
 
 - **Full Data Lifecycles (CRUD)**: Create, Read, Update, and Delete entries across 4 relational schemas: *Companies*, *Jobs*, *Applications*, and *Contacts*.
 - **AI Skill Matching Engine**: Compares applicant resumes against JSON-compiled job requirement arrays to calculate compatibility percentages and expose skill gaps.
@@ -24,7 +24,7 @@ This build integrates **Florida International University (FIU)** brand aesthetic
 - **Analytical Dashboard**: Features a `Chart.js` powered doughnut funnel visualizing your success rate (Offers vs. Interviews vs. Rejections).
 - **Data Integrity**: Enforced via cascading SQL foreign keys and prepared statements protecting against SQL injection.
 
-## 🏗 System Architecture
+## System Architecture
 
 ```text
 job_tracker/
@@ -41,7 +41,7 @@ job_tracker/
     └── ...
 ```
 
-## 🚀 Quick Setup Guide
+## Quick Setup Guide
 
 ### 1. Database Initialization
 Ensure **MySQL Workbench** or a local MySQL server is running on port `3306`.
@@ -64,7 +64,7 @@ DB_PASSWORD=your_mysql_password
 DB_DATABASE=job_tracker
 DB_PORT=3306
 ```
-> ⚠️ **Never commit your `.env` file.** It is already listed in `.gitignore`. The `.env.example` file (with placeholder values) is provided for reference only.
+> **Never commit your `.env` file.** It is already listed in `.gitignore`. The `.env.example` file (with placeholder values) is provided for reference only.
 
 ### 3. Server Initialization
 It is highly recommended to run this server isolated within a Python virtual environment.
@@ -85,5 +85,5 @@ python app.py
 
 ---
 <div align="center">
-  <em>Tested End-to-End Successfully ✅</em>
+  <em>Tested End-to-End Successfully</em>
 </div>
