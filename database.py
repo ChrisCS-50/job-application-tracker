@@ -174,6 +174,17 @@ class JobTrackerDB:
         if not conn: return False
         try:
             cursor = conn.cursor()
+            # Find associated jobs to delete their applications
+            cursor.execute('SELECT job_id FROM jobs WHERE company_id = %s', (company_id,))
+            jobs = cursor.fetchall()
+            for job in jobs:
+                cursor.execute('DELETE FROM applications WHERE job_id = %s', (job[0],))
+            
+            # Delete associated jobs and contacts
+            cursor.execute('DELETE FROM jobs WHERE company_id = %s', (company_id,))
+            cursor.execute('DELETE FROM contacts WHERE company_id = %s', (company_id,))
+            
+            # Finally, delete the company
             cursor.execute('DELETE FROM companies WHERE company_id = %s', (company_id,))
             conn.commit()
             return True
@@ -262,10 +273,14 @@ class JobTrackerDB:
         if not conn: return False
         try:
             cursor = conn.cursor()
+            # Delete associated applications first
+            cursor.execute('DELETE FROM applications WHERE job_id = %s', (job_id,))
+            # Delete the job
             cursor.execute('DELETE FROM jobs WHERE job_id = %s', (job_id,))
             conn.commit()
             return True
         except Error as e:
+            print(f"Error deleting job: {e}")
             return False
         finally:
             conn.close()
